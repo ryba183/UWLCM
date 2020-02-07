@@ -2,12 +2,16 @@
 #include <libmpdata++/solvers/mpdata_rhs_vip_prs_sgs.hpp>
 #include <libmpdata++/output/hdf5_xdmf.hpp>
 #include "../detail/checknan.cpp"
-
+#include <sstream>
 template <class ct_params_t, class enableif = void>
 class slvr_piggy
 {};
 
 using namespace libmpdataxx; // TODO: get rid of it?
+
+
+const std::string const_name = "velocity.h5";
+
 
 // driver
 template <class ct_params_t>
@@ -38,18 +42,36 @@ class slvr_piggy<
       // open file for out vel
       if(save_vel)
       {
-        try{
-          f_vel_out.open(this->outdir+"/velocity_out.dat"); 
-        }
-        catch(...)
-        {
-          throw std::runtime_error("error opening velocity output file '{outdir}/velocity_out.dat'");
-        }
+      //  try{
+	  //_mkdir(this->outdir + "/velocity_out/");
+	boost::filesystem::create_directory(this->outdir +"/velocity_out");      
+       // const_velo = this->outdir + "/" + const_name;
+ 	//f_vel_out.open(this->outdir + "/velocity_out.dat");
+     //    }
+      //  catch(...)
+       // {
+       //   throw std::runtime_error("error opening velocity output file '{outdir}/velocity.h5'");
+       // }
       }
       this->record_aux_const("save_vel", save_vel);  
       this->record_aux_const("rt_params prs_tol", prs_tol);  
     }
   }
+
+
+
+      std::string base_name()
+      {
+        std::stringstream ss;
+        ss << "timestep" << std::setw(10) << std::setfill('0') << this->timestep;
+        return ss.str();
+      }
+
+      std::string hdf_name()
+      {
+        // TODO: add option of .nc extension for Paraview sake ?
+        return base_name() + ".h5";
+      }           
 
   void hook_post_step()
   {
@@ -58,9 +80,13 @@ class slvr_piggy<
     // save velocity field
     if(this->rank==0 && save_vel)
     {
-      for (int d = 0; d < parent_t::n_dims; ++d)
+     this-> hdfp.reset(new H5::H5File(this->outdir + "/velocity_out/" + hdf_name(), H5F_ACC_TRUNC));
+           for (int d = 0; d < parent_t::n_dims; ++d)
       {
-        f_vel_out << this->state(this->vip_ixs[d]);
+       // f_vel_out << this->state(this->vip_ixs[d]);
+      
+	std::string s = std::to_string(d);
+      	this->record_aux_dsc(s, this->state(this->vip_ixs[d]));
       }
     }
   }
