@@ -37,7 +37,7 @@ apt-get update -qq \
         python3-scipy \
         python3-matplotlib \
         python3-pytest \
-	python-tk\
+	python3-tk\
 	dvipng\
 	texlive-latex-extra\
         libthrust-dev \
